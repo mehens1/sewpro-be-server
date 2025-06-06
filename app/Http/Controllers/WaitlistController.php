@@ -34,7 +34,7 @@ class WaitlistController extends Controller
         $validated = $request->validate([
             'full_name'    => 'required|string|max:255',
             'email'        => 'required|email|max:255|unique:waitlists,email',
-            'phone_number' => 'required|string|max:20|unique:waitlists,phone_number',
+            'phone_number' => 'string|max:20|unique:waitlists,phone_number',
         ]);
 
         try {
