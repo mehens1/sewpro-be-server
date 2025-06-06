@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Waitlist extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'full_name',
+        'email',
+        'phone_number',
+    ];
 }
