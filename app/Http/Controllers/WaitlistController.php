@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Traits\ApiResponse;
 use App\Models\Waitlist;
+use Illuminate\Support\Facades\Http;
 
 
 class WaitlistController extends Controller
 {
     use ApiResponse;
+
+    private $listName = 'Sewpro wait-list';
+
     /**
      * Display a listing of the resource.
      */
@@ -38,7 +42,32 @@ class WaitlistController extends Controller
         ]);
 
         try {
+
+            $getresponseApiKey = env('GETRESPONSE_API_KEY');
+
+            $name = $validated['full_name'];
+            $email = $validated['email'];
+
             $waitlist_user = Waitlist::create($validated);
+
+            $campaigns = Http::withHeaders([
+                'X-Auth-Token' => 'api-key ' . $getresponseApiKey
+            ])->get('https://api.getresponse.com/v3/campaigns');
+
+            $campaign = collect($campaigns->json())->firstWhere('name', $this->listName);
+
+            $campaignId = $campaign['campaignId'] ?? null;
+
+            $response = Http::withHeaders([
+                'X-Auth-Token' => 'api-key ' . $getresponseApiKey,
+                'Content-Type' => 'application/json'
+            ])->post('https://api.getresponse.com/v3/contacts', [
+                'name' => $name,
+                'email' => $email,
+                'campaign' => [
+                    'campaignId' => $campaignId ?? null
+                ]
+            ]);
 
             return $this->successResponse([
                 'message' => 'User added to waitlist successfully.',
@@ -46,6 +75,7 @@ class WaitlistController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            \Log::debug("message" . $e->getMessage());
             return $this->errorResponse('Failed to add user to waitlist.', 500, [
                 'error' => $e->getMessage()
             ]);
