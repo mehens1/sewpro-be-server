@@ -9,8 +9,8 @@ Route::group(['prefix' => 'v1'], function () {
     // });
 
     Route::group(['prefix' => 'auth'], function () {
-        Route::post("/register", \App\Actions\auth\Register::class);
-        Route::post("/login", \App\Actions\auth\Login::class);
+        Route::post("/register", \App\Actions\Auth\Register::class);
+        Route::post("/login", \App\Actions\Auth\Login::class);
         // Route::post("/google", \App\Actions\auth\GoogleAuth::class);
         // Route::post("/google/link-account", \App\Actions\auth\SocialAuthLinkAccount::class);
         // Route::post("/apple", \App\Actions\auth\AppleAuth::class);
