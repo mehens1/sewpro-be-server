@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions\auth;
+namespace App\Actions\Auth;
 
 use App\Traits\ApiResponse;
 
