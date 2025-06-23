@@ -64,6 +64,7 @@ class WaitlistController extends Controller
             ])->post('https://api.getresponse.com/v3/contacts', [
                 'name' => $name,
                 'email' => $email,
+                "dayOfCycle" => "0",
                 'campaign' => [
                     'campaignId' => $campaignId ?? null
                 ]
