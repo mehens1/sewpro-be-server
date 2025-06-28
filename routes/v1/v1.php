@@ -58,4 +58,22 @@ Route::group(['prefix' => 'v1'], function () {
     // Route::post("/subscription/verify", \App\Actions\Subscriptions\VerifySubscription::class)
     //     ->middleware(['auth:api', 'logContext']);
     // Route::post("/appstore/test", \App\Actions\Subscriptions\RequestTestAppStoreNotification::class);
+
+    // Password reset routes
+    Route::post('/forgot-password', \App\Actions\Auth\ForgotPassword::class)
+        ->middleware('guest')
+        ->name('password.email');
+
+    Route::post('/reset-password', \App\Actions\Auth\ResetPassword::class)
+        ->middleware('guest')
+        ->name('password.update');
+    
+    // Email verification routes
+    Route::get('/email/verify/{id}/{hash}', \App\Actions\Auth\VerifyEmail::class)
+        ->middleware(['auth:api', 'signed'])
+        ->name('verification.verify');
+
+    Route::post('/email/verification-notification', \App\Actions\Auth\ResendEmailVerification::class)
+        ->middleware(['auth:api', 'throttle:6,1'])
+        ->name('verification.send');
 });
