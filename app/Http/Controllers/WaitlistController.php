@@ -19,7 +19,18 @@ class WaitlistController extends Controller
      */
     public function index()
     {
-        //
+        try {
+            $waitlist_users = Waitlist::all();
+
+            return $this->successResponse([
+                'message' => 'Waitlist users retrieved successfully',
+                'data'    => $waitlist_users
+            ], 200);
+        } catch (\Throwable $th) {
+            return $this->errorResponse('Failed to fetch waitlist users', 500, [
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**

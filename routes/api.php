@@ -25,3 +25,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Waitlist routes
 Route::post('/waitlist', [WaitlistController::class, 'store']);
+Route::get('/waitlist', [WaitlistController::class, 'index']);

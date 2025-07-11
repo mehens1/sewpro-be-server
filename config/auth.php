@@ -103,6 +103,8 @@ return [
         ],
     ],
 
+    'default_user_password' => env('DEFAULT_USER_PASSWORD', 'Password123'),
+
     /*
     |--------------------------------------------------------------------------
     | Password Confirmation Timeout

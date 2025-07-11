@@ -35,6 +35,9 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'staff',
+        'tailor',
+        'vendor',
     ];
 
     /**
@@ -47,13 +50,35 @@ class User extends Authenticatable implements JWTSubject
         'password' => 'hashed',
     ];
 
+    protected $appends = ['meta'];
+
     public function getJWTIdentifier()
     {
-        return $this->getKey(); // usually the 'id'
+        return $this->getKey();
     }
 
     public function getJWTCustomClaims()
     {
-        return []; // You can return extra claims here
+        return [];
+    }
+
+    public function staff()
+    {
+        return $this->hasOne(Staff::class);
+    }
+
+    public function tailor()
+    {
+        return $this->hasOne(Tailor::class);
+    }
+
+    public function getMetaAttribute()
+    {
+        return match ($this->account_type) {
+            'staff' => $this->staff,
+            // 'tailor' => $this->tailor,
+            // 'vendor' => $this->vendor,
+            default => null,
+        };
     }
 }

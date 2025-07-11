@@ -31,6 +31,20 @@ Route::group(['prefix' => 'v1'], function () {
         // });
     });
 
+    Route::group(['middleware' => ['auth:api'] ], function () {
+
+        Route::group(['prefix' => 'users' ], function () {
+            Route::get("/", \App\Actions\Users\ListUser::class);
+            Route::post("/", \App\Actions\Users\CreateUser::class);
+        });
+
+    });
+
+
+    // Route::group(['prefix' => 'users', 'middleware' => ['auth:api'] ], function () {
+    //     Route::get("/users", \App\Actions\Users\ListUser::class);
+    // });
+
     // Route::group(['prefix' => 'profile', 'middleware' => ['auth:api', 'allowedAppVersions', 'logContext']], function () {
     //     Route::get("/tag/{tag}", \App\Actions\Profile\ChooseATag::class);
     //     Route::post("/tag/{tag}", \App\Actions\Profile\ChooseATag::class);
