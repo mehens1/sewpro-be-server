@@ -121,7 +121,7 @@ class WaitlistController extends Controller
 
         } catch (\Exception $e) {
             \Log::error("Waitlist registration failed", ["exception" => $e]);
-            return $this->errorResponse('Failed to add user to waitlist.', 500, [
+            return $this->errorResponse('Failed to add user to waitlist: '.$e->getMessage(), 500, [
                 'error' => $e->getMessage()
             ]);
         }
