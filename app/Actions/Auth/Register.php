@@ -7,6 +7,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
 use Lorisleiva\Actions\ActionRequest;
 use Illuminate\Support\Facades\Hash;
 use App\Enums\AccountType;
+use Illuminate\Support\Str;
 use App\Enums\UserRole;
 
 use App\Models\User;
@@ -23,6 +24,7 @@ class Register
             'phone_number' => 'required|string|max:20|unique:users,phone_number',
             'password' => 'required|string|min:8',
             'account_type' => 'sometimes|in:' . implode(',', AccountType::values()),
+            'referral_code' => 'nullable|exists:users,referral_code',
             // 'user_role' => 'nullable|in:' . implode(',', UserRole::values()),
         ];
     }
@@ -46,11 +48,23 @@ class Register
                 ]);
             }
 
+            $referrer = null;
+
+            if (!empty($details['referral_code'])) {
+                $referrer = User::where('referral_code', $details['referral_code'])->first();
+            }
+
+            do {
+                $generatedCode = strtoupper(Str::random(8));
+            } while (User::where('referral_code', $generatedCode)->exists());
+
             $user = User::create([
                 'email' => $details['email'],
                 'phone_number' => $details['phone_number'],
                 'account_type' => $details['account_type'] ?? AccountType::TAILOR->value,
                 'password' => Hash::make($details['password']),
+                'referral_code' => $generatedCode,
+                'referred_by' => $referrer?->id,
             ]);
 
             return $this->successResponse([

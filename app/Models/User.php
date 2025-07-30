@@ -71,6 +71,16 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(Tailor::class);
     }
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referred_by');
+    }
+
+    public function referrals()
+    {
+        return $this->hasMany(User::class, 'referred_by');
+    }
+
 
     public function getMetaAttribute()
     {

@@ -6,13 +6,12 @@ use Illuminate\Http\Request;
 use App\Traits\ApiResponse;
 use App\Models\Waitlist;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 
 class WaitlistController extends Controller
 {
     use ApiResponse;
-
-    private $listName = 'Sewpro wait-list';
 
     /**
      * Display a listing of the resource.
@@ -26,8 +25,11 @@ class WaitlistController extends Controller
                 'message' => 'Waitlist users retrieved successfully',
                 'data'    => $waitlist_users
             ], 200);
-        } catch (\Throwable $th) {
-            return $this->errorResponse('Failed to fetch waitlist users', 500, [
+        }
+
+        catch (\Exception $e) {
+            \Log::debug("message" . $e->getMessage());
+            return $this->errorResponse('Failed to fetch waitlist users: ', 500, [
                 'error' => $e->getMessage()
             ]);
         }
@@ -41,9 +43,6 @@ class WaitlistController extends Controller
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -53,33 +52,67 @@ class WaitlistController extends Controller
         ]);
 
         try {
+            $waitlist_user = DB::transaction(function () use ($validated) {
 
-            $getresponseApiKey = env('GETRESPONSE_API_KEY');
+                $name = $validated['full_name'];
+                $email = $validated['email'];
+                $phone = $validated['phone_number'];
 
-            $name = $validated['full_name'];
-            $email = $validated['email'];
+                $nameParts = explode(' ', $name);
+                $firstName = $nameParts[0];
+                $lastName = $nameParts[1] ?? '';
 
-            $waitlist_user = Waitlist::create($validated);
+                $waitlist_user = Waitlist::create($validated);
 
-            $campaigns = Http::withHeaders([
-                'X-Auth-Token' => 'api-key ' . $getresponseApiKey
-            ])->get('https://api.getresponse.com/v3/campaigns');
+                $payload = [
+                    "email" => $email,
+                    "locale" => "en",
+                    "tags" => "Waitlist",
+                    "fields" => [
+                        [
+                            "fieldName" => "First name",
+                            "slug" => "first_name",
+                            "value" => $firstName,
+                        ],
+                        [
+                            "fieldName" => "Last name",
+                            "slug" => "surname",
+                            "value" => $lastName,
+                        ],
+                        [
+                            "fieldName" => "Phone number",
+                            "slug" => "phone_number",
+                            "value" => $phone,
+                        ],
+                        [
+                            "fieldName" => "Country",
+                            "slug" => "country",
+                            "value" => "NG"
+                        ],
+                    ],
+                ];
 
-            $campaign = collect($campaigns->json())->firstWhere('name', $this->listName);
+                $systemeIoApiKey = env('SYSTEME_IO_API_KEY');
+                $systemeIoUrl = env('SYSTEME_IO_URL');
 
-            $campaignId = $campaign['campaignId'] ?? null;
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'X-API-Key' => $systemeIoApiKey,
+                ])->post($systemeIoUrl.'/contacts', $payload);
 
-            $response = Http::withHeaders([
-                'X-Auth-Token' => 'api-key ' . $getresponseApiKey,
-                'Content-Type' => 'application/json'
-            ])->post('https://api.getresponse.com/v3/contacts', [
-                'name' => $name,
-                'email' => $email,
-                "dayOfCycle" => "0",
-                'campaign' => [
-                    'campaignId' => $campaignId ?? null
-                ]
-            ]);
+                // Optional: Validate response before committing
+                if (!$response->successful()) {
+                    $responseData = $response->json();
+
+                    $errorMessage = $responseData['detail']
+                        ?? 'Systeme.io API failed without a specific message.';
+
+                    throw new \Exception($errorMessage);
+                }
+
+                return $waitlist_user;
+            });
 
             return $this->successResponse([
                 'message' => 'User added to waitlist successfully.',
@@ -87,12 +120,13 @@ class WaitlistController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            \Log::debug("message" . $e->getMessage());
+            \Log::error("Waitlist registration failed", ["exception" => $e]);
             return $this->errorResponse('Failed to add user to waitlist.', 500, [
                 'error' => $e->getMessage()
             ]);
         }
     }
+
 
     /**
      * Display the specified resource.
