@@ -19,8 +19,7 @@ class ListUser
 
     public function rules(): array
     {
-        return [
-        ];
+        return [];
     }
 
     public function handle(array $params)
@@ -28,20 +27,17 @@ class ListUser
         try {
             $user = auth()->user();
 
-            if ($user->account_type !== 'staff') {
+            if (!$user->is_staff) {
                 return $this->errorResponse('You are not permitted to access this route', 403, [
                     'error' => 'You are not permitted'
                 ]);
             }
 
-            // $users = User::all();
-            // $users = User::with(['staff'])->get();
             $users = User::get();
 
             return $this->successResponse([
                 'users' => $users
             ], 'Users fetched successfully');
-
         } catch (\Exception $e) {
             Log::error("Fetching users failed", [
                 "type" => "list_users_failed",
@@ -61,6 +57,4 @@ class ListUser
     {
         return $this->handle($request->all());
     }
-
-
 }
