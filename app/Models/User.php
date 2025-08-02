@@ -23,8 +23,11 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'phone_number',
         'password',
-        'account_type',
+        'is_staff',
+        'is_admin',
         'user_role',
+        'referral_code',
+        'referred_by',
     ];
 
     /**
@@ -46,6 +49,8 @@ class User extends Authenticatable implements JWTSubject
      * @var array<string, string>
      */
     protected $casts = [
+        'is_staff' => 'boolean',
+        'is_admin' => 'boolean',
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
@@ -71,6 +76,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(Tailor::class);
     }
+
     public function referrer()
     {
         return $this->belongsTo(User::class, 'referred_by');
@@ -81,14 +87,15 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(User::class, 'referred_by');
     }
 
-
     public function getMetaAttribute()
     {
-        return match ($this->account_type) {
-            'staff' => $this->staff,
-            // 'tailor' => $this->tailor,
-            // 'vendor' => $this->vendor,
-            default => null,
-        };
+        if ($this->is_staff) {
+            return $this->staff;
+        } else {
+            return $this->tailor;
+        }
+        // elseif ($this->is_vendor) {
+        //     return $this->vendor;
+        // } 
     }
 }

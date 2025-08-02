@@ -6,7 +6,6 @@ use App\Traits\ApiResponse;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Lorisleiva\Actions\ActionRequest;
 use Illuminate\Support\Facades\Hash;
-use App\Enums\AccountType;
 use Illuminate\Support\Str;
 
 use App\Models\User;
@@ -22,14 +21,12 @@ class Register
             'email' => 'bail|required|email|unique:users,email',
             'phone_number' => 'required|string|max:20|unique:users,phone_number',
             'password' => 'required|string|min:8',
-            'account_type' => 'sometimes|in:' . implode(',', AccountType::values()),
             'referral_code' => 'nullable|exists:users,referral_code',
         ];
     }
 
     public function handle($details)
     {
-
 
         try {
             $existingEmail = User::where('email', $details['email'])->first();
@@ -52,14 +49,10 @@ class Register
                 $referrer = User::where('referral_code', $details['referral_code'])->first();
             }
 
-            do {
-                $generatedCode = strtoupper(Str::random(8));
-            } while (User::where('referral_code', $generatedCode)->exists());
-
+            $generatedCode = strtoupper(Str::random(8));
             $user = User::create([
                 'email' => $details['email'],
                 'phone_number' => $details['phone_number'],
-                'account_type' => $details['account_type'] ?? AccountType::TAILOR->value,
                 'password' => Hash::make($details['password']),
                 'referral_code' => $generatedCode,
                 'referred_by' => $referrer?->id,

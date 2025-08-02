@@ -8,7 +8,6 @@ use Lorisleiva\Actions\ActionRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Enums\AccountType;
 
 class AddUser
 {
@@ -23,7 +22,6 @@ class AddUser
             'email' => 'required|email|unique:users,email',
             'phone_number' => 'required|string|max:15',
             'user_role' => 'sometimes|string',
-            'account_type' => 'sometimes|string|in:' . implode(',', AccountType::values()),
         ];
     }
 
@@ -37,7 +35,7 @@ class AddUser
                 'email' => $params['email'],
                 'phone_number' => $params['phone_number'],
                 'password' => Hash::make(config('app.default_user_password')),
-                'account_type' => $params['account_type'] ?? 'staff',
+                'is_staff' => 1,
                 'user_role' => $params['user_role'] ?? 'staff',
             ]);
 
@@ -52,7 +50,6 @@ class AddUser
                 'message' => 'User added successfully',
                 'user' => $newUser
             ], 'User added successfully');
-
         } catch (\Exception $e) {
             Log::error("Adding user failed", [
                 "type" => "add_user_failed",
@@ -70,6 +67,4 @@ class AddUser
     {
         return $this->handle($request->all());
     }
-
-
 }
