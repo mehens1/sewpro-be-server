@@ -8,7 +8,6 @@ use Lorisleiva\Actions\ActionRequest;
 use Illuminate\Support\Facades\Hash;
 use App\Enums\AccountType;
 use Illuminate\Support\Str;
-use App\Enums\UserRole;
 
 use App\Models\User;
 
@@ -25,7 +24,6 @@ class Register
             'password' => 'required|string|min:8',
             'account_type' => 'sometimes|in:' . implode(',', AccountType::values()),
             'referral_code' => 'nullable|exists:users,referral_code',
-            // 'user_role' => 'nullable|in:' . implode(',', UserRole::values()),
         ];
     }
 
