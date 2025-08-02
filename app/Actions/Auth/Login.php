@@ -10,8 +10,9 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Lorisleiva\Actions\ActionRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-use App\Models\User;
+// use App\Models\User;
 use App\Models\Staff;
+use App\Models\Tailor;
 
 class Login
 {
@@ -60,10 +61,26 @@ class Login
 
             $user = auth()->user();
 
-            if ($user->account_type == 'staff') {
+            if ($isAdmin && !$user->is_staff) {
+                return $this->errorResponse('Access Denied! You do not have permission to this system.', 400, [
+                    'error' => 'Permission Denied! You do not have permission to this system.',
+                ]);
+            }
+
+            // \Log::debug('user: ', [$user]);
+
+            if ($user->is_staff) {
                 $staff = Staff::where('user_id', $user->id)->first();
                 if ($staff) {
                     $user->meta = $staff;
+                }
+            }
+            
+            if($user->is_staff == 0) {
+                $tailor = Tailor::where('user_id', $user->id)->first();
+                if ($tailor) {
+                    \Log::debug('tailor: ', [$tailor]);
+                    $user->meta = $tailor;
                 }
             }
 
