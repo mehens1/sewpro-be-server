@@ -58,16 +58,21 @@ class WaitlistController extends Controller
                 $email = $validated['email'];
                 $phone = $validated['phone_number'];
 
+                $tagId = env('SYSTEME_IO_TAG_ID');
+                $apiKey = env('SYSTEME_IO_API_KEY');
+                $apiUrl = rtrim(env('SYSTEME_IO_URL'), '/');
+
                 $nameParts = explode(' ', $name);
                 $firstName = $nameParts[0];
                 $lastName = $nameParts[1] ?? '';
 
                 $waitlist_user = Waitlist::create($validated);
 
-                $payload = [
+                // Step 1: Create the contact
+                $contactPayload = [
                     "email" => $email,
                     "locale" => "en",
-                    "tags" => "Waitlist",
+                    "email_campaign" => "SEWPRO WAITLIST",
                     "fields" => [
                         [
                             "fieldName" => "First name",
@@ -92,30 +97,47 @@ class WaitlistController extends Controller
                     ],
                 ];
 
-                $systemeIoApiKey = env('SYSTEME_IO_API_KEY');
-                $systemeIoUrl = env('SYSTEME_IO_URL');
-
-                $response = Http::withHeaders([
+                $contactResponse = Http::withHeaders([
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
-                    'X-API-Key' => $systemeIoApiKey,
-                ])->post($systemeIoUrl.'/contacts', $payload);
+                    'X-API-Key' => $apiKey,
+                ])->post("{$apiUrl}/contacts", $contactPayload);
 
-                // Optional: Validate response before committing
-                if (!$response->successful()) {
-                    $responseData = $response->json();
-
-                    $errorMessage = $responseData['detail']
-                        ?? 'Systeme.io API failed without a specific message.';
-
+                if (!$contactResponse->successful()) {
+                    $responseData = $contactResponse->json();
+                    $errorMessage = $responseData['detail'] ?? 'Systeme.io contact creation failed.';
                     throw new \Exception($errorMessage);
+                }
+
+                // Step 2: Get contact ID
+                $contactData = $contactResponse->json();
+                $contactId = $contactData['id'] ?? null;
+
+                if (!$contactId) {
+                    throw new \Exception('Missing contact ID from Systeme.io response.');
+                }
+
+                // Step 3: Assign tag to contact
+                $tagAssignmentPayload = [
+                    'tagId' => (int) $tagId,
+                ];
+
+                $tagResponse = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'X-API-Key' => $apiKey,
+                ])->post("{$apiUrl}/contacts/{$contactId}/tags", $tagAssignmentPayload);
+
+                if (!$tagResponse->successful()) {
+                    $tagError = $tagResponse->json()['detail'] ?? 'Failed to assign tag to contact.';
+                    throw new \Exception($tagError);
                 }
 
                 return $waitlist_user;
             });
 
             return $this->successResponse([
-                'message' => 'User added to waitlist successfully.',
+                'message' => 'User added to waitlist and tagged successfully.',
                 'data'    => $waitlist_user
             ], 201);
 
