@@ -4,8 +4,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WaitlistController;
 
-
-
 require __DIR__ . '/v1/v1.php';
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
