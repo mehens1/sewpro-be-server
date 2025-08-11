@@ -28,7 +28,7 @@ class AddUser
     public function handle(array $params)
     {
         try {
-            $user = auth()->user();
+            // $user = auth()->user();
 
             // create new user
             $newUser = User::create([
@@ -40,7 +40,7 @@ class AddUser
             ]);
 
             // if user created, then create record in staff table
-            $newUser->staff()->create([
+            $newUser->detail()->create([
                 'user_id' => $newUser->id,
                 'first_name' => $params['first_name'],
                 'last_name' => $params['last_name'],

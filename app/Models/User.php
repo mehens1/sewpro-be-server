@@ -55,8 +55,6 @@ class User extends Authenticatable implements JWTSubject
         'password' => 'hashed',
     ];
 
-    protected $appends = ['meta'];
-
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -77,6 +75,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(Tailor::class);
     }
 
+    public function detail()
+    {
+        return $this->hasOne(UserDetail::class);
+    }
+
     public function referrer()
     {
         return $this->belongsTo(User::class, 'referred_by');
@@ -86,16 +89,8 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(User::class, 'referred_by');
     }
-
     public function getMetaAttribute()
     {
-        if ($this->is_staff) {
-            return $this->staff;
-        } else {
-            return $this->tailor;
-        }
-        // elseif ($this->is_vendor) {
-        //     return $this->vendor;
-        // } 
+        return $this->detail;
     }
 }
