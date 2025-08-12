@@ -28,6 +28,7 @@ class User extends Authenticatable implements JWTSubject
         'user_role',
         'referral_code',
         'referred_by',
+        'remember_token',
     ];
 
     /**

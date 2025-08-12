@@ -6,8 +6,9 @@ use App\Traits\ApiResponse;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Lorisleiva\Actions\ActionRequest;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-
+use App\Mail\WelcomeEmail;
 use App\Models\User;
 
 class Register
@@ -58,12 +59,12 @@ class Register
                 'referred_by' => $referrer?->id,
             ]);
 
+            Mail::to($user->email)->send(new WelcomeEmail($user));
+
             return $this->successResponse([
                 'message' => 'User registered successfully, Please Login.',
                 'data'    => $user
             ], 201);
-
-
         } catch (\Exception $exp) {
             \Log::error("User registration failed", ["type" => "user_registration_failed", "server_error" => true, "email" => $details["email"], "exception" => $exp]);
             return $this->errorResponse('User registration failed.', 500, [

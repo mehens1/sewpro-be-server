@@ -7,13 +7,15 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'auth'], function () {
         Route::post("/register", \App\Actions\Auth\Register::class);
         Route::post("/login", \App\Actions\Auth\Login::class);
+        Route::post("/reset-password", \App\Actions\Auth\ResetPassword::class);
+        Route::post("/verify-code", \App\Actions\Auth\VerifyCode::class);
+        Route::post("/set-new-password", \App\Actions\Auth\SetNewPassword::class);
     });
 
     Route::group(['middleware' => ['auth:api']], function () {
 
         Route::group(['prefix' => 'users'], function () {
             Route::get("/", \App\Actions\Users\ListUser::class);
-            // Route::post("/", \App\Actions\Users\CreateUser::class);
             Route::post("/", \App\Actions\Users\AddUser::class);
         });
 
