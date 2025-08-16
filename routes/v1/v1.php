@@ -29,6 +29,17 @@ Route::group(['prefix' => 'v1'], function () {
         Route::group(['prefix' => 'customers'], function () {
             Route::get("/", \App\Actions\Customer\GetCustomers::class);
             Route::post("/", \App\Actions\Customer\CreateCustomer::class);
+
+            Route::group(['prefix' => 'measurements'], function () {
+                Route::get('/', \App\Actions\Measurements\GetMeasurement::class);
+                Route::post('/', \App\Actions\Measurements\SaveMeasurement::class);
+            });
+        });
+
+        Route::group(['prefix' => 'invoices'], function () {
+            Route::get('/{id}', \App\Actions\Invoices\ShowInvoice::class);
+            Route::post('/generate', \App\Actions\Invoices\GenerateInvoice::class);
+            Route::put('/{id}/status', \App\Actions\Invoices\UpdateInvoiceStatus::class);
         });
     });
 });
