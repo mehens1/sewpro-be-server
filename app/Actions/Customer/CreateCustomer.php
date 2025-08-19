@@ -19,8 +19,8 @@ class CreateCustomer
     {
         return [
             'full_name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:customers,email',
-            'phone' => self::NULLABLE_STRING . '|unique:customers,phone|max:15',
+            'email' => 'nullable|email',
+            'phone' => self::NULLABLE_STRING . '|max:15',
             'date_of_birth' => 'nullable|date',
             'gender' => self::NULLABLE_STRING . '|in:male,female,other',
             'profile_picture' => self::NULLABLE_STRING,
@@ -33,6 +33,23 @@ class CreateCustomer
     {
         try {
             $user = auth()->user();
+
+            $existingCustomer = Customer::where('user_id', $user->id)
+                ->where(function ($query) use ($params) {
+                    if (!empty($params['email'])) {
+                        $query->orWhere('email', $params['email']);
+                    }
+                    if (!empty($params['phone'])) {
+                        $query->orWhere('phone', $params['phone']);
+                    }
+                })
+                ->first();
+
+            if ($existingCustomer) {
+                return $this->errorResponse('Customer with this email or phone already exists.', 422, [
+                    'error' => 'Customer with this email or phone already exists.'
+                ]);
+            }
 
             $newCustomer = Customer::create([
                 'user_id' => $user->id,
