@@ -20,4 +20,9 @@ class Customer extends Model
         'nationality',
         'address',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

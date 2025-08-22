@@ -32,24 +32,33 @@ class SaveMeasurement
             $savedClothTypes = [];
 
             foreach ($params['cloth_types'] as $clothData) {
-                $clothType = ClothType::updateOrCreate(
-                    [
-                        'customer_id' => $params['customer_id'],
-                        'name'        => $clothData['name'],
-                    ],
-                    []
-                );
+                // Check if this cloth type already exists for the customer
+                $existingCloth = ClothType::where('customer_id', $params['customer_id'])
+                    ->where('name', $clothData['name'])
+                    ->first();
 
-                foreach ($clothData['measurements'] as $fieldName => $fieldValue) {
-                    Measurement::updateOrCreate(
-                        [
-                            'cloth_type_id' => $clothType->id,
-                            'field_name'    => $fieldName,
-                        ],
-                        [
-                            'field_value'   => $fieldValue,
-                        ]
+                if ($existingCloth) {
+                    DB::rollBack(); // rollback transaction
+                    return $this->errorResponse(
+                        "Cloth type '{$clothData['name']}' already exists for this customer.",
+                        422,
+                        ['error' => "Cloth type '{$clothData['name']}' already exists for this customer."]
                     );
+                }
+
+                // Create cloth type
+                $clothType = ClothType::create([
+                    'customer_id' => $params['customer_id'],
+                    'name'        => $clothData['name'],
+                ]);
+
+                // Save measurements
+                foreach ($clothData['measurements'] as $fieldName => $fieldValue) {
+                    Measurement::create([
+                        'cloth_type_id' => $clothType->id,
+                        'field_name'    => $fieldName,
+                        'field_value'   => $fieldValue,
+                    ]);
                 }
 
                 $savedClothTypes[] = $clothType->load('measurements');

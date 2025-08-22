@@ -29,10 +29,12 @@ Route::group(['prefix' => 'v1'], function () {
         Route::group(['prefix' => 'customers'], function () {
             Route::get("/", \App\Actions\Customer\GetCustomers::class);
             Route::post("/", \App\Actions\Customer\CreateCustomer::class);
+            Route::get("{id}", \App\Actions\Customer\GetCustomer::class);
 
             Route::group(['prefix' => 'measurements'], function () {
-                Route::get('/', \App\Actions\Measurements\GetMeasurement::class);
+                Route::get('/{id}', \App\Actions\Measurements\GetMeasurement::class);
                 Route::post('/', \App\Actions\Measurements\SaveMeasurement::class);
+                Route::delete('/{cloth_type_id}', \App\Actions\Measurements\DeleteMeasurement::class);
             });
         });
 

@@ -7,11 +7,19 @@ use Illuminate\Support\Facades\Log;
 use Lorisleiva\Actions\ActionRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
 use App\Models\Customer;
+use App\Services\FileUploadService;
 
 class CreateCustomer
 {
     use AsAction;
     use ApiResponse;
+
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
 
     private const NULLABLE_STRING = 'nullable|string';
 
@@ -23,13 +31,13 @@ class CreateCustomer
             'phone' => self::NULLABLE_STRING . '|max:15',
             'date_of_birth' => 'nullable|date',
             'gender' => self::NULLABLE_STRING . '|in:male,female,other',
-            'profile_picture' => self::NULLABLE_STRING,
+            'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'nationality' => self::NULLABLE_STRING,
             'address' => self::NULLABLE_STRING,
         ];
     }
 
-    public function handle(array $params)
+    public function handle(array $params, $file = null)
     {
         try {
             $user = auth()->user();
@@ -51,6 +59,12 @@ class CreateCustomer
                 ]);
             }
 
+            $uploadedFileUrl = null;
+            if ($file) {
+                $folder = "customers/{$user->id}";
+                $uploadedFileUrl = $this->fileUploadService->uploadFile($file, $folder);
+            }
+
             $newCustomer = Customer::create([
                 'user_id' => $user->id,
                 'full_name' => $params['full_name'],
@@ -58,7 +72,7 @@ class CreateCustomer
                 'phone' => $params['phone'] ?? null,
                 'date_of_birth' => $params['date_of_birth'] ?? null,
                 'gender' => $params['gender'] ?? null,
-                'profile_picture' => $params['profile_picture'] ?? null,
+                'profile_picture' => $uploadedFileUrl,
                 'nationality' => $params['nationality'] ?? null,
                 'address' => $params['address'] ?? null,
             ]);
@@ -83,6 +97,9 @@ class CreateCustomer
 
     public function asController(ActionRequest $request)
     {
-        return $this->handle($request->all());
+        return $this->handle(
+            $request->all(),
+            $request->file('profile_picture')
+        );
     }
 }
