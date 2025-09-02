@@ -8,7 +8,7 @@ use Lorisleiva\Actions\ActionRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
 use App\Models\Customer;
 
-class getCustomers
+class GetCustomers
 {
     use AsAction;
     use ApiResponse;

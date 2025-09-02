@@ -24,12 +24,18 @@ Route::group(['prefix' => 'v1'], function () {
             Route::group(['prefix' => 'password'], function () {
                 Route::post("/change", \App\Actions\User\ChangePassword::class);
             });
+
+            Route::group(['prefix' => 'company'], function () {
+                Route::get("/", \App\Actions\Company\GetUserCompany::class);
+                Route::post("/", \App\Actions\Company\CreateUserCompany::class);
+            });
         });
 
         Route::group(['prefix' => 'customers'], function () {
             Route::get("/", \App\Actions\Customer\GetCustomers::class);
             Route::post("/", \App\Actions\Customer\CreateCustomer::class);
-            Route::get("{id}", \App\Actions\Customer\GetCustomer::class);
+            Route::get("/{id}", \App\Actions\Customer\GetCustomer::class);
+            Route::delete("/{id}", \App\Actions\Customer\DeleteCustomer::class);
 
             Route::group(['prefix' => 'measurements'], function () {
                 Route::get('/{id}', \App\Actions\Measurements\GetMeasurement::class);
@@ -40,8 +46,9 @@ Route::group(['prefix' => 'v1'], function () {
 
         Route::group(['prefix' => 'invoices'], function () {
             Route::get('/{id}', \App\Actions\Invoices\ShowInvoice::class);
-            Route::post('/generate', \App\Actions\Invoices\GenerateInvoice::class);
-            Route::put('/{id}/status', \App\Actions\Invoices\UpdateInvoiceStatus::class);
+            Route::put('/customer/status', \App\Actions\Invoices\UpdateInvoiceStatus::class);
+            Route::get('/customer/{customer_id}', \App\Actions\Invoices\ListCustomerInvoices::class);
+            Route::post('/customer/generate', \App\Actions\Invoices\GenerateCustomerInvoice::class);
         });
     });
 });
