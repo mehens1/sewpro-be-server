@@ -86,7 +86,6 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(CompanyDetail::class);
     }
 
-
     public function referrer()
     {
         return $this->belongsTo(User::class, 'referred_by');
@@ -96,6 +95,13 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(User::class, 'referred_by');
     }
+
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class);
+        // return $this->hasMany(\App\Models\UserDevice::class);
+    }
+
     public function getMetaAttribute()
     {
         return $this->detail;

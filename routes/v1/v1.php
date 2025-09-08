@@ -20,6 +20,7 @@ Route::group(['prefix' => 'v1'], function () {
         });
 
         Route::group(['prefix' => 'user'], function () {
+            Route::get("/", \App\Actions\User\Profile::class);
             Route::post("/me", \App\Actions\User\UpdateProfile::class);
             Route::group(['prefix' => 'password'], function () {
                 Route::post("/change", \App\Actions\User\ChangePassword::class);
@@ -49,6 +50,17 @@ Route::group(['prefix' => 'v1'], function () {
             Route::put('/customer/status', \App\Actions\Invoices\UpdateInvoiceStatus::class);
             Route::get('/customer/{customer_id}', \App\Actions\Invoices\ListCustomerInvoices::class);
             Route::post('/customer/generate', \App\Actions\Invoices\GenerateCustomerInvoice::class);
+        });
+
+        Route::group(['prefix' => 'tasks'], function () {
+            Route::get('/', \App\Actions\Tasks\ListTasks::class);
+            Route::post('/', \App\Actions\Tasks\CreateTask::class);
+            Route::put('/status', \App\Actions\Tasks\UpdateTaskStatus::class);
+            Route::delete('/{task_id}', \App\Actions\Tasks\DeleteTask::class);
+        });
+
+        Route::group(['prefix' => 'notification'], function () {
+            Route::post('/device-tokens', \App\Actions\Notifications\CreateDeviceToken::class);
         });
     });
 });
