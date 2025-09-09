@@ -3,6 +3,7 @@
 namespace App\Actions\User;
 
 use App\Models\User;
+use App\Services\FileUploadService;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Log;
 use Lorisleiva\Actions\ActionRequest;
@@ -10,8 +11,14 @@ use Lorisleiva\Actions\Concerns\AsAction;
 
 class UpdateProfile
 {
-    use AsAction;
-    use ApiResponse;
+    use AsAction, ApiResponse;
+
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
 
     public function rules(): array
     {
@@ -21,6 +28,7 @@ class UpdateProfile
             'phone_number' => 'sometimes|string|max:20|unique:users,phone_number,' . auth()->id(),
             'gender' => 'nullable|string',
             'residential_address' => 'nullable|string',
+            'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'bio' => 'nullable|string',
         ];
     }
@@ -29,20 +37,24 @@ class UpdateProfile
     {
         try {
             $user = auth()->user();
-
             $fullUser = User::with('detail')->findOrFail($user->id);
 
-            if (isset($params['phone_number'])) {
-                $fullUser->phone_number = $params['phone_number'];
-                $fullUser->save();
+            if (!empty($params['phone_number'])) {
+                $fullUser->update(['phone_number' => $params['phone_number']]);
             }
 
-            unset($params['phone_number']);
+            // Handle profile picture upload
+            if (!empty($params['profile_picture'])) {
+                $folder = "users/{$user->id}";
+                $uploadedFileUrl = $this->fileUploadService->uploadFile($params['profile_picture'], $folder);
+                $params['profile_picture'] = $uploadedFileUrl;
+            }
 
-            if (!empty($params)) {
+            $detailParams = collect($params)->except(['phone_number'])->toArray();
+            if (!empty($detailParams)) {
                 $fullUser->detail()->updateOrCreate(
                     ['user_id' => $fullUser->id],
-                    $params
+                    $detailParams
                 );
             }
 
@@ -62,6 +74,7 @@ class UpdateProfile
             ]);
         }
     }
+
 
     public function asController(ActionRequest $request)
     {
