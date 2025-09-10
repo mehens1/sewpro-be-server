@@ -19,6 +19,7 @@ class ListTasks
             'status'   => ['sometimes', Rule::in(['upcoming', 'done', 'overdue'])],
             'title'    => 'sometimes|string',
             'per_page' => 'sometimes|integer|min:1|max:100',
+            'limit'    => 'sometimes|integer|min:1|max:100',
         ];
     }
 
@@ -37,11 +38,35 @@ class ListTasks
                 $query->where('title', 'like', '%' . $params['title'] . '%');
             }
 
+            $query->latest();
+
             $perPage = $params['per_page'] ?? 10;
 
-            return $query
-                ->latest()
-                ->paginate($perPage);
+            if (!empty($params['limit'])) {
+                // Clamp per_page so it never exceeds limit
+                $perPage = min($perPage, $params['limit']);
+
+                // Paginate but enforce max total results
+                return $query->paginate(
+                    $perPage,
+                    ['*'],
+                    'page',
+                    null
+                )->through(function ($task) use ($params) {
+                    return $task;
+                })->appends($params)->setCollection(
+                    $query->take($params['limit'])->get()
+                );
+            }
+
+            return $query->paginate($perPage);
+
+            // if (!empty($params['limit'])) {
+            //     return $query->take($params['limit'])->get();
+            // }
+
+            // $perPage = $params['per_page'] ?? 10;
+            // return $query->paginate($perPage);
         } catch (\Throwable $th) {
             Log::error("Error fetching tasks: " . $th->getMessage());
 

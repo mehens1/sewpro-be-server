@@ -21,6 +21,7 @@ Route::group(['prefix' => 'v1'], function () {
 
         Route::group(['prefix' => 'user'], function () {
             Route::get("/", \App\Actions\User\Profile::class);
+            Route::get("/dashboard", \App\Actions\User\Dashboard::class);
             Route::post("/me", \App\Actions\User\UpdateProfile::class);
             Route::group(['prefix' => 'password'], function () {
                 Route::post("/change", \App\Actions\User\ChangePassword::class);

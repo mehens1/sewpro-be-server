@@ -11,7 +11,7 @@ class SendTaskReminders extends Command
 {
     protected $signature = 'tasks:send-reminders';
     protected $description = 'Send task reminders 3 days and 1 day before due date';
-    
+
     public function handle()
     {
         $tolerance = 1;
