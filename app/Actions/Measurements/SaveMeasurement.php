@@ -31,6 +31,10 @@ class SaveMeasurement
         try {
             $savedClothTypes = [];
 
+            if (!isset($params) || !isset($params["customer_id"])) {
+                return $this->errorResponse('Failed to save measurements, cant create a measurement at random', 404);
+            }
+
             foreach ($params['cloth_types'] as $clothData) {
                 // Check if this cloth type already exists for the customer
                 $existingCloth = ClothType::where('customer_id', $params['customer_id'])

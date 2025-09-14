@@ -9,7 +9,6 @@ use Lorisleiva\Actions\ActionRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use App\Mail\WelcomeEmail;
 use App\Models\PasswordResetToken;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -72,7 +71,6 @@ class Register
             ]);
 
             Mail::to($user->email)->send(new VerifyEmailCodeMail($code));
-            Mail::to($user->email)->send(new WelcomeEmail($user));
 
             DB::commit();
 

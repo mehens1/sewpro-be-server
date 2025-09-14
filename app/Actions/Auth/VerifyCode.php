@@ -2,13 +2,12 @@
 
 namespace App\Actions\Auth;
 
-use App\Mail\ThankYouForVerificationMail;
+use App\Mail\WelcomeEmail;
 use App\Traits\ApiResponse;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Lorisleiva\Actions\ActionRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\PasswordResetToken;
 use Illuminate\Support\Facades\Mail;
@@ -55,9 +54,7 @@ class VerifyCode
                     'email_verified_at' => now()
                 ]);
 
-                Mail::to($user->email)->send(
-                    new ThankYouForVerificationMail($user->name ?? $user->email)
-                );
+                Mail::to($user->email)->send(new WelcomeEmail($params["email"]));
 
                 $message = 'Email verified successfully!';
             } else {

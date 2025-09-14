@@ -42,21 +42,25 @@ class CreateCustomer
         try {
             $user = auth()->user();
 
-            $existingCustomer = Customer::where('user_id', $user->id)
-                ->where(function ($query) use ($params) {
-                    if (!empty($params['email'])) {
-                        $query->orWhere('email', $params['email']);
-                    }
-                    if (!empty($params['phone'])) {
-                        $query->orWhere('phone', $params['phone']);
-                    }
-                })
-                ->first();
+            if (!empty($params['email']) || !empty($params['phone'])) {
+                $existingCustomer = Customer::where('user_id', $user->id)
+                    ->where(function ($query) use ($params) {
+                        if (!empty($params['email'])) {
+                            $query->orWhere('email', $params['email']);
+                        }
+                        if (!empty($params['phone'])) {
+                            $query->orWhere('phone', $params['phone']);
+                        }
+                    })
+                    ->first();
 
-            if ($existingCustomer) {
-                return $this->errorResponse('Customer with this email or phone already exists.', 422, [
-                    'error' => 'Customer with this email or phone already exists.'
-                ]);
+                if ($existingCustomer) {
+                    return $this->errorResponse(
+                        'Customer with this email or phone already exists.',
+                        422,
+                        ['error' => 'Customer with this email or phone already exists.']
+                    );
+                }
             }
 
             $uploadedFileUrl = null;
@@ -77,10 +81,7 @@ class CreateCustomer
                 'address' => $params['address'] ?? null,
             ]);
 
-            return $this->successResponse([
-                'message' => 'Customer created successfully',
-                'user' => $newCustomer
-            ], 'Customer created successfully');
+            return $this->successResponse($newCustomer, 'Customer created successfully', 201);
         } catch (\Exception $e) {
             Log::error("Creating customer failed", [
                 "type" => "create_customer_failed",

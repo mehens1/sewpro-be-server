@@ -37,6 +37,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get("/", \App\Actions\Customer\GetCustomers::class);
             Route::post("/", \App\Actions\Customer\CreateCustomer::class);
             Route::get("/{id}", \App\Actions\Customer\GetCustomer::class);
+            Route::put("/{id}", \App\Actions\Customer\UpdateCustomer::class);
             Route::delete("/{id}", \App\Actions\Customer\DeleteCustomer::class);
 
             Route::group(['prefix' => 'measurements'], function () {
@@ -57,6 +58,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/', \App\Actions\Tasks\ListTasks::class);
             Route::post('/', \App\Actions\Tasks\CreateTask::class);
             Route::put('/status', \App\Actions\Tasks\UpdateTaskStatus::class);
+            Route::put('/{id}', \App\Actions\Tasks\UpdateTask::class);
             Route::delete('/{task_id}', \App\Actions\Tasks\DeleteTask::class);
         });
 
