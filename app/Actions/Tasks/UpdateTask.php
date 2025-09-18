@@ -19,7 +19,7 @@ class UpdateTask
             'task_id' => 'sometimes|integer|exists:tasks,id',
             'title'    => 'required|string',
             'description'    => 'nullable|string',
-            'collection_date'    => 'required|date',
+            'collection_date'    => 'sometimes|date',
             'due_date'    => 'required|date',
             'status'  => ['required', Rule::in(['upcoming', 'done', 'overdue'])],
         ];
