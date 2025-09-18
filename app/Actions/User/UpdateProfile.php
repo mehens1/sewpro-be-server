@@ -2,6 +2,8 @@
 
 namespace App\Actions\User;
 
+use App\Models\User;
+use App\Services\FileUploadService;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Log;
 use Lorisleiva\Actions\ActionRequest;
@@ -9,8 +11,14 @@ use Lorisleiva\Actions\Concerns\AsAction;
 
 class UpdateProfile
 {
-    use AsAction;
-    use ApiResponse;
+    use AsAction, ApiResponse;
+
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
 
     public function rules(): array
     {
@@ -18,6 +26,10 @@ class UpdateProfile
             'first_name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
             'phone_number' => 'sometimes|string|max:20|unique:users,phone_number,' . auth()->id(),
+            'gender' => 'nullable|string',
+            'residential_address' => 'nullable|string',
+            'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+            'bio' => 'nullable|string',
         ];
     }
 
@@ -25,63 +37,47 @@ class UpdateProfile
     {
         try {
             $user = auth()->user();
+            $fullUser = User::with('detail')->findOrFail($user->id);
 
-            // Update phone number on the users table
-            if (isset($params['phone_number'])) {
-                $user->phone_number = $params['phone_number'];
-                $user->save();
+            if (!empty($params['phone_number'])) {
+                $fullUser->update(['phone_number' => $params['phone_number']]);
             }
 
-            // Remove phone_number from params to avoid passing it to related tables
-            unset($params['phone_number']);
+            // Handle profile picture upload
+            if (!empty($params['profile_picture'])) {
+                $folder = "users/{$user->id}";
+                $uploadedFileUrl = $this->fileUploadService->uploadFile($params['profile_picture'], $folder);
+                $params['profile_picture'] = $uploadedFileUrl;
+            }
 
-            // Update related profile table based on account type
-            if (!empty($params)) {
-                switch ($user->account_type) {
-                    case 'staff':
-                        if ($user->staff) {
-                            $user->staff->update($params);
-                        }
-                        break;
-
-                    case 'tailor':
-                        if ($user->tailor) {
-                            $user->tailor->update($params);
-                        }
-                        break;
-
-                    default:
-                        // Optional: log or handle unknown account types
-                        Log::warning("Unknown account type when updating profile", [
-                            "user_id" => $user->id,
-                            "account_type" => $user->account_type
-                        ]);
-                        break;
-                }
+            $detailParams = collect($params)->except(['phone_number'])->toArray();
+            if (!empty($detailParams)) {
+                $fullUser->detail()->updateOrCreate(
+                    ['user_id' => $fullUser->id],
+                    $detailParams
+                );
             }
 
             return $this->successResponse([
                 'message' => 'Profile updated successfully',
-                'user' => $user->fresh()
-            ], 'Profile updated successfully');
-
+                'user' => $fullUser->fresh()->load('detail'),
+            ]);
         } catch (\Exception $e) {
             Log::error("Updating profile failed", [
                 "type" => "update_profile_failed",
                 "server_error" => true,
                 "exception" => $e->getMessage(),
-                "user_id" => auth()->id()
+                "user_id" => auth()->id(),
             ]);
             return $this->errorResponse('Update profile failed.', 500, [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }
 
+
     public function asController(ActionRequest $request)
     {
-        return $this->handle($request->all());
+        return $this->handle($request->validated());
     }
-
-
 }

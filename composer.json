@@ -6,11 +6,15 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "cloudinary-labs/cloudinary-laravel": "^2.3",
+        "google/apiclient": "^2.0",
         "guzzlehttp/guzzle": "^7.2",
+        "kreait/laravel-firebase": "^5.8",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "lorisleiva/laravel-actions": "^2.9",
+        "sentry/sentry-laravel": "^4.16",
         "tymon/jwt-auth": "^2.2"
     },
     "require-dev": {

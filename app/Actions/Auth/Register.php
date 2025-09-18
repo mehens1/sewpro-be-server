@@ -2,14 +2,16 @@
 
 namespace App\Actions\Auth;
 
+use App\Mail\VerifyEmailCodeMail;
 use App\Traits\ApiResponse;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Lorisleiva\Actions\ActionRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use App\Mail\WelcomeEmail;
+use App\Models\PasswordResetToken;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class Register
 {
@@ -28,6 +30,8 @@ class Register
 
     public function handle($details)
     {
+
+        DB::beginTransaction();
 
         try {
             $existingEmail = User::where('email', $details['email'])->first();
@@ -56,16 +60,26 @@ class Register
                 'phone_number' => $details['phone_number'],
                 'password' => Hash::make($details['password']),
                 'referral_code' => $generatedCode,
-                'referred_by' => $referrer?->id,
+                'referred_by' => $referrer?->id ?? User::find(1)?->id ?? null,
             ]);
 
-            Mail::to($user->email)->send(new WelcomeEmail($user));
+            $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+            PasswordResetToken::create([
+                'email' => $details['email'],
+                'token' => $code,
+            ]);
+
+            Mail::to($user->email)->send(new VerifyEmailCodeMail($code));
+
+            DB::commit();
 
             return $this->successResponse([
-                'message' => 'User registered successfully, Please Login.',
+                'message' => 'User registered successfully, Kindly verify your email before Login',
                 'data'    => $user
             ], 201);
         } catch (\Exception $exp) {
+            DB::rollBack();
             \Log::error("User registration failed", ["type" => "user_registration_failed", "server_error" => true, "email" => $details["email"], "exception" => $exp]);
             return $this->errorResponse('User registration failed.', 500, [
                 'error' => $exp->getMessage()

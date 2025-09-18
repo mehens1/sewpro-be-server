@@ -27,6 +27,7 @@ class User extends Authenticatable implements JWTSubject
         'is_admin',
         'user_role',
         'referral_code',
+        'email_verified_at',
         'referred_by',
         'remember_token',
     ];
@@ -81,6 +82,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(UserDetail::class);
     }
 
+    public function companyDetail()
+    {
+        return $this->hasOne(CompanyDetail::class);
+    }
+
     public function referrer()
     {
         return $this->belongsTo(User::class, 'referred_by');
@@ -90,6 +96,13 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(User::class, 'referred_by');
     }
+
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class);
+        // return $this->hasMany(\App\Models\UserDevice::class);
+    }
+
     public function getMetaAttribute()
     {
         return $this->detail;

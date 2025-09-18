@@ -7,11 +7,19 @@ use Illuminate\Support\Facades\Log;
 use Lorisleiva\Actions\ActionRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
 use App\Models\Customer;
+use App\Services\FileUploadService;
 
 class CreateCustomer
 {
     use AsAction;
     use ApiResponse;
+
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
 
     private const NULLABLE_STRING = 'nullable|string';
 
@@ -19,20 +27,47 @@ class CreateCustomer
     {
         return [
             'full_name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:customers,email',
-            'phone' => self::NULLABLE_STRING . '|unique:customers,phone|max:15',
+            'email' => 'nullable|email',
+            'phone' => self::NULLABLE_STRING . '|max:15',
             'date_of_birth' => 'nullable|date',
             'gender' => self::NULLABLE_STRING . '|in:male,female,other',
-            'profile_picture' => self::NULLABLE_STRING,
+            'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'nationality' => self::NULLABLE_STRING,
             'address' => self::NULLABLE_STRING,
         ];
     }
 
-    public function handle(array $params)
+    public function handle(array $params, $file = null)
     {
         try {
             $user = auth()->user();
+
+            if (!empty($params['email']) || !empty($params['phone'])) {
+                $existingCustomer = Customer::where('user_id', $user->id)
+                    ->where(function ($query) use ($params) {
+                        if (!empty($params['email'])) {
+                            $query->orWhere('email', $params['email']);
+                        }
+                        if (!empty($params['phone'])) {
+                            $query->orWhere('phone', $params['phone']);
+                        }
+                    })
+                    ->first();
+
+                if ($existingCustomer) {
+                    return $this->errorResponse(
+                        'Customer with this email or phone already exists.',
+                        422,
+                        ['error' => 'Customer with this email or phone already exists.']
+                    );
+                }
+            }
+
+            $uploadedFileUrl = null;
+            if ($file) {
+                $folder = "customers/{$user->id}";
+                $uploadedFileUrl = $this->fileUploadService->uploadFile($file, $folder);
+            }
 
             $newCustomer = Customer::create([
                 'user_id' => $user->id,
@@ -41,15 +76,12 @@ class CreateCustomer
                 'phone' => $params['phone'] ?? null,
                 'date_of_birth' => $params['date_of_birth'] ?? null,
                 'gender' => $params['gender'] ?? null,
-                'profile_picture' => $params['profile_picture'] ?? null,
+                'profile_picture' => $uploadedFileUrl,
                 'nationality' => $params['nationality'] ?? null,
                 'address' => $params['address'] ?? null,
             ]);
 
-            return $this->successResponse([
-                'message' => 'Customer created successfully',
-                'user' => $newCustomer
-            ], 'Customer created successfully');
+            return $this->successResponse($newCustomer, 'Customer created successfully', 201);
         } catch (\Exception $e) {
             Log::error("Creating customer failed", [
                 "type" => "create_customer_failed",
@@ -66,6 +98,9 @@ class CreateCustomer
 
     public function asController(ActionRequest $request)
     {
-        return $this->handle($request->all());
+        return $this->handle(
+            $request->all(),
+            $request->file('profile_picture')
+        );
     }
 }

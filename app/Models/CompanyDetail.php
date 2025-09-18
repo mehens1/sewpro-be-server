@@ -5,20 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Customer extends Model
+class CompanyDetail extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'full_name',
-        'email',
-        'phone',
-        'gender',
-        'date_of_birth',
-        'profile_picture',
-        'nationality',
+        'name',
         'address',
+        'phone',
+        'email',
+        'logo_path',
+        'bank_name',
+        'bank_account_name',
+        'bank_account_number',
     ];
 
     public function user()

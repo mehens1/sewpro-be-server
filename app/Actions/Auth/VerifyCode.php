@@ -2,14 +2,15 @@
 
 namespace App\Actions\Auth;
 
+use App\Mail\WelcomeEmail;
 use App\Traits\ApiResponse;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Lorisleiva\Actions\ActionRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\PasswordResetToken;
+use Illuminate\Support\Facades\Mail;
 
 class VerifyCode
 {
@@ -20,6 +21,7 @@ class VerifyCode
         return [
             'email' => 'bail|required|email',
             'token' => 'bail|required|string',
+            'verifyEmail' => 'sometimes|boolean',
         ];
     }
 
@@ -41,38 +43,54 @@ class VerifyCode
             }
 
             if ($resetRecord->token !== $params['token']) {
-                return $this->errorResponse('Invalid reset code.', 422);
+                return $this->errorResponse('Invalid verification code.', 422);
             }
 
-            $tempToken = bin2hex(random_bytes(32));
+            $message = '';
+            $responseData = [];
 
-            $user->update([
-                'remember_token' => $tempToken
-            ]);
+            if (!empty($params['verifyEmail']) && $params['verifyEmail'] === true) {
+                $user->update([
+                    'email_verified_at' => now()
+                ]);
+
+                Mail::to($user->email)->send(new WelcomeEmail($params["email"]));
+
+                $message = 'Email verified successfully!';
+            } else {
+                $tempToken = bin2hex(random_bytes(32));
+
+                $user->update([
+                    'remember_token' => $tempToken,
+                    'email_verified_at' => now()
+                ]);
+
+                $message = 'Reset code verified successfully!';
+                $responseData['token'] = $tempToken;
+            }
 
             $resetRecord->delete();
-
             DB::commit();
 
-            return $this->successResponse([
-                'message' => 'Code verified successfully. Email has been verified.',
-                'token'   => $tempToken
-            ]);
+            return $this->successResponse(array_merge([
+                'message' => $message,
+            ], $responseData));
         } catch (\Exception $exp) {
             DB::rollBack();
 
-            Log::error("Password reset code verification failed", [
-                "type"         => "password_reset_code_verification_failed",
+            Log::error("Code verification failed", [
+                "type"         => !empty($params['verifyEmail']) ? "email_verification_failed" : "password_reset_code_verification_failed",
                 "server_error" => true,
                 "email"        => $params['email'] ?? null,
                 "exception"    => $exp->getMessage()
             ]);
 
-            return $this->errorResponse('Failed to verify reset code.', 500, [
+            return $this->errorResponse('Failed to verify code.', 500, [
                 'error' => $exp->getMessage()
             ]);
         }
     }
+
 
     public function asController(ActionRequest $request)
     {
