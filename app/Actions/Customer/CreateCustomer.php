@@ -52,13 +52,14 @@ class CreateCustomer
                             $query->orWhere('phone', $params['phone']);
                         }
                     })
+                    ->where('full_name', $params['full_name'])
                     ->first();
 
                 if ($existingCustomer) {
                     return $this->errorResponse(
-                        'Customer with this email or phone already exists.',
+                        'Customer with the same name, email or phone already exists.',
                         422,
-                        ['error' => 'Customer with this email or phone already exists.']
+                        ['error' => 'Customer with the same name, email or phone already exists.']
                     );
                 }
             }
