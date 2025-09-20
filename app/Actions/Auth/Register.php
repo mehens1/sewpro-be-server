@@ -60,7 +60,7 @@ class Register
                 'phone_number' => $details['phone_number'],
                 'password' => Hash::make($details['password']),
                 'referral_code' => $generatedCode,
-                'referred_by' => $referrer?->id ?? User::find(1)?->id ?? null,
+                'referred_by' => $referrer?->id ?? User::find(1)?->id,
             ]);
 
             $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);

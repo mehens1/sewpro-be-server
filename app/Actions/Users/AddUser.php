@@ -8,6 +8,7 @@ use Lorisleiva\Actions\ActionRequest;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 class AddUser
 {
@@ -28,14 +29,17 @@ class AddUser
     public function handle(array $params)
     {
         try {
-            // $user = auth()->user();
+            $user = auth()->user();
 
             // create new user
+            $generatedCode = strtoupper(Str::random(8));
             $newUser = User::create([
                 'email' => $params['email'],
                 'phone_number' => $params['phone_number'],
                 'password' => Hash::make(config('app.default_user_password')),
                 'is_staff' => 1,
+                'referral_code' => $generatedCode,
+                'referred_by' => $user->id ?? User::find(1)?->id,
                 'user_role' => $params['user_role'] ?? 'staff',
             ]);
 
